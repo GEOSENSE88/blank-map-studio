@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy
 
 on:
   push:
@@ -11,11 +11,12 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  pages:
+    name: GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -28,3 +29,42 @@ jobs:
           path: dist
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  server:
+    name: 26sannam3.site
+    runs-on: ubuntu-latest
+    # 접속 정보는 전부 시크릿이다 — 저장소가 공개라 원서버 주소를 파일에 적지 않는다.
+    # 키는 서버에서 /usr/local/bin/deploy-blank-map 만 실행하도록 묶여 있다.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SSH 준비
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          if [ -z "$KEY" ]; then
+            echo "DEPLOY_SSH_KEY 시크릿이 없어 서버 배포를 건너뜁니다." >&2
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: dist 전송
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          tar -czf - -C dist . | ssh -i ~/.ssh/deploy \
+            -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=30 \
+            "$USER@$HOST"
+
+      - name: 공개 주소 확인
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' https://26sannam3.site/blank-map/)
+          echo "https://26sannam3.site/blank-map/ -> $code"
+          [ "$code" = "200" ]

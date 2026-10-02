@@ -34,6 +34,15 @@
 
 KoPub돋움체는 이 기기에 설치된 `KoPubDotum Medium`을 이용합니다. 다른 기기에서 같은 글꼴로 보려면 해당 글꼴이 설치되어 있어야 합니다. PNG는 저장 당시 모양을 유지하며 SVG는 글꼴 설치 상태에 영향을 받습니다. 폰트 파일은 사이트에 포함하지 않습니다.
 
+## 배포
+
+`main` 에 푸시하면 `.github/workflows/pages.yml` 이 두 곳에 같이 올립니다.
+
+- GitHub Pages: https://geosense88.github.io/blank-map-studio/
+- 개인 서버: https://26sannam3.site/blank-map/
+
+서버 배포는 `dist` 를 tar 로 묶어 SSH 표준입력으로 보내고, 서버의 `/usr/local/bin/deploy-blank-map` 이 받아 내용을 확인한 뒤 `/var/www/blank-map-studio/` 로 교체합니다. 전용 키는 `authorized_keys` 의 forced command 로 그 스크립트만 실행하며, 쉘·포트포워딩·sudo 는 못 합니다. 접속 정보는 저장소 시크릿 `DEPLOY_SSH_KEY` / `DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_KNOWN_HOSTS` 에 넣었습니다.
+
 ## 작업 저장
 
 [저장] / [열기]는 브라우저(`localStorage`)에 이름을 붙여 보관합니다. 최대 30개를 가지며 같은 이름으로 저장하면 덮어씁니다. 다른 기기로 옮길 때만 ‘파일로 내보내기 / 파일에서 가져오기’를 쓰세요.
